@@ -1,0 +1,335 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="layout" content="login"/>
+	<meta property="og:title" content="${title?:grailsApplication.config.facebook.title}">
+	<meta property="og:description" content="${description?:grailsApplication.config.facebook.description}">
+	<meta property="og:image" content="${image?:grailsApplication.config.facebook.image}">
+    <link rel="stylesheet" type="text/css" href="/template/pages/login2/stylesheets/bootstrap/bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="/template/pages/login2/stylesheets/fontawesome/css/font-awesome.min.css">
+	<link rel="stylesheet" type="text/css" href="/template/pages/login2/stylesheets/login/login.css">
+	<link rel="stylesheet" type="text/css" href="/template/pages/login2/stylesheets/dialog/theme.css">
+	<script type="text/javascript" src="/template/pages/login2/javascripts/jquery/1.11.3/jquery.min.js"></script>
+	<script type="text/javascript" src="/template/pages/login2/javascripts/bootstrap/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/template/pages/login2/javascripts/login/login.js"></script>
+	<script type="text/javascript" src="/template/pages/login2/javascripts/login/facebook.js"></script>
+	<script src="https://apis.google.com/js/api:client.js"></script>
+	<!-- <script type="text/javascript" src="/template/pages/login2/javascripts/login/google.js"></script> -->
+	<script type="text/javascript" src="/template/pages/login2/javascripts/login/auto.js"></script>
+	<!--<script>var contextPath = "${request.contextPath}"</script>-->
+	<script>
+		if("{{loginType}}" == 'auto'){
+			var authCodeExpiry = "{{authCodeExpiry}}";
+			var authCode = "{{authCode}}";
+			var privateId = "{{privateId}}";
+			var setHeader = "{{headers}}";
+			auto();
+		}
+	</script>
+	{% set registerChannelAvailability = registerChannelAvailability.toString() | json %}
+	{% if registerChannelAvailability.toString().includes('otp') || registerChannelAvailability.toString().includes('userpwd,') || registerChannelAvailability.toString().includes('userpwd"')
+		|| registerChannelAvailability.toString().includes('userpwd3rd')
+		|| registerChannelAvailability.toString().includes('email')
+		|| registerChannelAvailability.toString().includes('social') %}
+		{% set regisChannel = registerChannelAvailability %}
+	{% else %}
+		{% set regisChannel = "otp" %}
+	{% endif %}
+</head>
+<body style="background: url('images/bg.png') no-repeat bottom center;">
+	<div class="navbar-header">
+		<div class="logoAIS">
+			<img src="images/logo_ais.png">
+		</div>
+	</div>
+	<form useToken="true" id="dialogForm" contoller="display" action="confirm" method="post">
+		<div class="container BGWhite" id="login-form">
+			<div class="col-md-8 col-md-offset-2">
+				<h2 class="Sushi fontsize48 font-bold"> <i class="fa fa-lock"></i> ล็อกอิน</h2>
+				<div id="loginChoices">
+					<ul class="nav nav-tabs" role="tablist">
+						{% if regisChannel.indexOf('otp') !== -1 %}
+						<li role="presentation"><a href="#byOTP" aria-controls="home" role="tab" data-toggle="tab">OTP</a></li>
+						{% endif %}
+						{% if regisChannel.indexOf('userpwd,') !== -1 || regisChannel.indexOf('userpwd"') !== -1 %}
+						{% set hasLdap = 'true' %}
+						<li role="presentation"><a href="#byLdap" aria-controls="profile" role="tab" data-toggle="tab">Ldap</a></li>
+						{% endif %}
+						{% if regisChannel.indexOf('userpwd3rd') !== -1 %}
+						<li role="presentation"><a href="#byUserPass" aria-controls="messages" role="tab" data-toggle="tab">Username</a></li>
+						{% endif %}
+						{% if regisChannel.indexOf('email') !== -1 %}
+						<li role="presentation"><a href="#byEmail" aria-controls="settings" role="tab" data-toggle="tab">Email</a></li>
+						{% endif %}
+					</ul>
+					<p class="clearfix"></p>
+					<!--Login by OTP-->
+					<div class="tab-content">
+						<div role="tabpanel" class="tab-pane {% if regisChannel.includes('otp') %}active{% endif %}" id="byOTP">
+							<div id="loginOTP">
+								<p class='otp-warn'>
+									เพื่อความสะดวก ปลอดภัย และรักษาความเป็นส่วนตัวของคุณ<br>
+									โดยคุณไม่ต้องจํา password อีกต่อไป กรุณาระบุหมายเลขโทรศัพท์ 10 หลัก<br>
+									เพื่อรับรหัสผ่านแบบใช้ครั้งเดียว
+								</p>
+								<div class="alert alert-danger loginError" role="alert">
+									  <i class="fa fa-times"></i>
+									  <span class="sr-only">Error:</span>
+									  <span class='msg-error'></span>
+								</div>
+								<div class="form-group">
+									<label for="inputEmail3" class="col-md-5 control-label">หมายเลขโทรศัพท์
+										<i class="fa fa-mobile"></i> :
+									</label>
+									<div class="col-md-7">
+										<div class="input-group">
+											<input type="IDCARD" class="form-control" id="mobileNo" maxlength='10' number-only ng-model="mobileNumber" required>
+											<span class="input-group-btn">
+												<button type="button" class="btn btn-default" id="reqOpt" style="float: right;">
+													<i class="fa fa-envelope-o visible-xs-inline"></i>
+													<span class='hidden-xs'>รับรหัสผ่าน</span>
+												</button>
+											</span>
+										</div>
+										<p style="color: #717273; font-size: 16px;   line-height: 15px; margin-top: 6px;">
+											กรุณาใส่รหัสผ่านที่ได้รับทาง SMS เพื่อเข้าสู่ระบบ<br>
+											รหัสผ่านของคุณมีอายุการใช้งาน 15 นาที
+										</p>
+									</div>
+									<p class="clearfix"></p>
+									
+									<div class="form-group otp-content" style="display: none;">
+										<div class="form-group otp-content">
+											<label for="inputEmail3" class="col-md-5 control-label">รหัสผ่าน
+												<i class="fa fa-key"></i> :
+											</label>
+											<div class="col-md-7">
+												<input type="IDCARD" class="form-control" id="otp" name="otp" maxlength='4'>
+												<p class="clearfix"></p>
+												<div class='group-btn-content'>
+													<button type="button" class="btn btn-default" id='loginbyOTP' disabled="disabled">ตกลง</button>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!--Login by userPwdLdap-->
+						<div role="tabpanel" class="tab-pane {% if hasLdap == 'true' && regisChannel.indexOf('otp') === -1 %}active{% endif %}" id="byLdap">
+							<div id="loginUserPassLdap">
+								<div class="alert alert-danger loginError" role="alert" ng-show="modelAlert">
+									  <i class="fa fa-times"></i>
+									  <span class="sr-only">Error:</span>
+									  <span class='msg-error'>{{msgAlert}}</span>
+								</div>
+								<div class="form-group">
+									<label for="inputEmail3" class="col-md-5 control-label">Username
+										<i class="fa fa-lock"></i> :
+									</label>
+									<div class="col-md-4">
+										<input type="IDCARD" class="form-control" id="usernameLdap" required>
+									</div>
+									<!-- <div class="col-md-3 address">@ais.co.th</div> -->
+									<p class="clearfix"></p>
+								</div>
+								<div class="form-group">
+									<label for="inputEmail3" class="col-md-5 control-label">Password
+										<i class="fa fa-key"></i> :
+									</label>
+									<div class="col-md-7">
+										<input type="password" class="form-control" id="passwordLdap" required>
+										<p class="clearfix"></p>
+										<div class='group-btn-content'>
+											<button type="button" class="btn btn-default" id='loginbyUserPassLdap'>ตกลง</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!--Login by userpwd3rd-->
+						<div role="tabpanel" class="tab-pane {% if regisChannel.includes('userpwd3rd') && (regisChannel.indexOf('otp') === -1 && hasLdap != 'true') %}active{% endif %}" id="byUserPass">
+							<div id="loginUserPassDs3">
+								<div class="alert alert-danger loginError" role="alert" ng-show="modelAlert">
+									  <i class="fa fa-times"></i>
+									  <span class="sr-only">Error:</span>
+									  <span class='msg-error'>{{msgAlert}}</span>
+								</div>
+								<div class="form-group">
+									<label for="inputEmail3" class="col-md-5 control-label">Username
+										<i class="fa fa-user"></i> :
+									</label>
+									<div class="col-md-4">
+										<input type="IDCARD" class="form-control" id="username" required>
+									</div>
+									<!-- <div class="col-md-3 address">@ais.co.th</div> -->
+									<p class="clearfix"></p>
+								</div>
+								<div class="form-group">
+									<label for="inputEmail3" class="col-md-5 control-label">Password
+										<i class="fa fa-key"></i> :
+									</label>
+									<div class="col-md-7">
+										<input type="password" class="form-control" id="password" name="password" required>
+										<p class="clearfix"></p>
+										<div class='group-btn-content'>
+											<button type="button" class="btn btn-default" id='loginbyUserPassDs3'>ตกลง</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!--Login by email-->
+						<div role="tabpanel" class="tab-pane {% if regisChannel.includes('email') && (regisChannel.indexOf('otp') === -1 && regisChannel.indexOf('userpwd3rd') === -1 && hasLdap != 'true') %}active{% endif %}" id="byEmail">
+							<div id="loginEmail">
+								<div class="alert alert-danger loginError" role="alert" ng-show="modelAlert">
+									<i class="fa fa-times"></i>
+									<span class="sr-only">Error:</span>
+									<span class='msg-error'>{{msgAlert}}</span>
+								</div>
+								<div class="form-group">
+									<label for="inputEmail3" class="col-md-5 control-label">Email
+										<i class="fa fa-envelope-o"></i> :
+									</label>
+									<div class="col-md-7 has-feedback" id="div-email">
+										<input type="email" class="form-control email" id="email" required>
+										<span id="email-feedback" class="glyphicon form-control-feedback" style="display: none;"></span>
+									</div>
+									<p class="clearfix"></p>
+								</div>
+								<div class="form-group">
+									<label for="inputEmail3" class="col-md-5 control-label">Password
+										<i class="fa fa-key"></i> :
+									</label>
+									<div class="col-md-7">
+										<input type="password" class="form-control" id="passwordEmail" name="passwordEmail" required>
+										<p class="clearfix"></p>
+										<div class='group-btn-content'>
+											<button type="button" class="btn btn-default" id='loginbyEmail' disabled="disabled">ตกลง</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<p class="clearfix"></p>
+				{% if regisChannel.indexOf('social') !== -1 %}
+				<div id="social" class="center">
+					<hr>
+					<div class="form-group">
+						<label for="inputEmail3" class="control-label" id="or">or</label>
+						<div>
+							<span class="clickHere fa-stack fa-lg" onclick="FacebookLogin()">
+								<i class="fa fa-circle fa-stack-2x facebook-color"></i>
+								<i class="fa fa-facebook fa-stack-1x fa-inverse pointer"></i>
+							</span>
+							<!-- <span class="clickHere fa-stack fa-lg">
+								<i class="fa fa-circle fa-stack-2x twitter-color"></i>
+								<i class="fa fa-twitter fa-stack-1x  fa-inverse pointer"></i>
+							</span> -->
+							<!-- <span class="clickHere fa-stack fa-lg" id="googleLogin">
+								<i class="fa fa-circle fa-stack-2x googleplus-color"></i>
+								<i class="fa fa-google fa-stack-1x fa-inverse pointer"></i>
+							</span>  -->
+						</div>
+						<p class="clearfix"></p>
+					</div>
+				</div>
+				{% endif %}
+								
+			</div>
+		</div>
+		<!-- Register modal-->
+		<div class="modal fade" id="myModalRegister" data-backdrop="static" role="dialog">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content white">
+					<div class="modal-body">
+						<input type="hidden" id='moreInfo' value="">
+						<div id= "myModalRegisterMessage">
+							<h2>คุณยังไม่ได้ Register</h2>
+							<p>ต้องการ Register หรือไม่?</p>
+						</div>
+					</div>
+					<div class="modal-footer no-paddind">
+						<table class="table">
+							<tr>
+								<td id="confirmRegister">Confirm</td>
+								<td id="cancelRegister" style="border-right: none">cancel</td>
+							</tr>
+						</table>
+				       <!-- <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+				        <button type="button" class="btn btn-default" id="confirmRegister">Confirm</button> -->
+			      	</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="myModalAlert" data-backdrop="static" role="dialog">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content white">
+					<div class="modal-body">
+						<p id="myModalAlertMessage"></p>
+					</div>
+					<div class="modal-footer no-paddind">
+						<table class="table">
+							<tr>
+								<td id="myModalAlertRedo">ทำรายการใหม่อีกครั้ง</td>
+								<td id="myModalAlertCancel" style="border-right: none">ยกเลิก</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="modal fade" id="myModalSessionAlert" data-backdrop="static" role="dialog">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content white">
+					<div class="modal-body">
+						<p>Session ของคุณหมดอายุแล้ว กรุณากดทำรายการใหม่อีกคร้ง</p>
+					</div>
+					<div class="modal-footer no-paddind">
+						<table class="table">
+							<tr>
+								<td id="myModalSessionOk">ตกลง</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!--END Main Container-->
+		<div class="modal fade" id="myModalLoading"  role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop='static'>
+			<div class="modal-dialog-center">
+				<div class="modal-content">
+					<div class="modal-header text-center">
+						<i class='fa fa-spinner fa-spin spin-otp'></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	
+		<!-------------------FOOTTER---------------------->
+		<p class="clearfix"></p>
+		<div class="footer">
+			<div class="container">
+				<p class="text-muted">© 2014 ADVANCED INFO SERVICE PLC. ALL
+					RIGHTS RESERVED.</p>
+			</div>
+		</div>
+		<!-------------------END---FOOTTER---------------------->
+		<input type="hidden" id='tid' value="{{tid}}">
+		<input type="hidden" id='transactionID' value="">
+		<input type="hidden" id='serviceId' value="{{serviceId}}">
+		<input type="hidden" id='accountType' value="{{accountType}}">
+		<input type="hidden" id='otpChannel' value="{{otpChannel}}">
+		<input type="hidden" id='publicId' value="">
+		<input type="hidden" id='setLoginType' value="">
+	</form>
+</body>
+</html>

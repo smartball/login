@@ -1,0 +1,907 @@
+var listString;
+var status;
+var userAgent = navigator.userAgent;
+var clientId = decodeURIComponent(window.location.pathname.replace('/', ''));
+var xSessionId;
+var xApp;
+var xPrivate;
+var loginByB2CReturn;
+
+function sendOTP() {
+    var form = $(this).parents("form:first");
+    var mobileNumber = $("#mobileNo").val();
+    var msisdn = "66" + mobileNumber.substring(1);
+    var serviceId = $("#serviceId").val();
+    var accountType = $("#accountType").val();
+    var otpChannel = $("#otpChannel").val();
+    $.post("/login/sendOneTimePW", {
+        msisdn: msisdn,
+        serviceId: serviceId,
+        accountType: accountType,
+        otpChannel: otpChannel
+    }, function (json) {
+        if (json.isSuccess) {
+            $("#transactionID").val(json.transactionID);
+            $(".otp-content").show("fast", function () {
+                $('#otp').focus();
+            });
+        } else {
+            $("#reqOpt").show();
+            $('.msg-error').html(json.msg);
+            $('.loginError').show('slow', function () { });
+        }
+    });
+}
+
+function confirmOTP() {
+    var form = $(this).parents("form:first");
+    var otp = $("#otp").val();
+    var mobileNumber = $("#mobileNo").val();
+    var msisdn = "66" + mobileNumber.substring(1);
+    var transactionID = $("#transactionID").val();
+    var tid = $("#tid").val();
+    var publicId = $("#publicId").val();
+    var urlBack = $("#urlBack").val();
+    $.post("/login/loginbyOTP", {
+        msisdn: msisdn,
+        otp: otp,
+        transactionID: transactionID,
+        commandId: tid.toString()
+    }, function (json) {
+        if (!json.isSuccess) {
+            $('.msg-error').html(json.msg);
+            $('.loginError').show('slow', function () { });
+            $('#loginbyOTP').removeAttr('disabled');
+        } else {
+            var data = { "commandId": tid.toString(), "clientId": clientId, "publicId": msisdn, "loginType": "msisdn" };
+            $.ajax({
+                type: 'POST',
+                url: '/loginByB2C',
+                data: data,
+                success: function (jsonData, textStatus, request) {
+                    $('#loginbyOTP').removeAttr('disabled');
+                    if (jsonData != null && jsonData.resultCode == "20000") {
+                        xSessionId = request.getResponseHeader('x-session-id');
+                        xApp = request.getResponseHeader('x-app');
+                        xPrivate = request.getResponseHeader('x-partner-specific-private-id');
+                        if (jsonData.registerFlag == true) {
+                            $("#moreInfo").val(jsonData.moreInfo);
+                            $("#myModalRegister").modal('show');
+                        } else {
+                            $.ajax({
+                                type: 'POST',
+                                url: '/genSrfpToken',
+                                data: jsonData,
+                                headers: { 'X-Session-Id': xSessionId, 'X-App': xApp, 'X-Partner-Specific-Private-Id': xPrivate },
+                                success: function (data, textStatus, request) {
+                                    if (data == null) {
+                                        handleError(jsonData);
+                                    } else {
+                                        var responseJson = {};
+                                        responseJson.ol4 = data;
+                                        responseJson.xApp = xApp ? xApp : "";
+                                        responseJson.privateId = jsonData.privateId ? jsonData.privateId : "";
+                                        responseJson.resultCode = jsonData.resultCode;
+                                        responseJson.developerMessage = jsonData.developerMessage ? jsonData.developerMessage : "";
+                                        responseJson.authCode = jsonData.authCode ? jsonData.authCode : "";
+
+                                        var responseJsonParameters = JSON.stringify(responseJson);
+
+                                        var json = JSON.parse(responseJsonParameters);
+
+                                        console.log("ol4::", responseJson.ol4);
+                                        var ol5 = genJsonWebToken(responseJson);
+                                        var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                                        if (redirectUrl) {
+                                            window.location = redirectUrl + "?ol5=" + ol5;
+                                        }
+                                        //if (userAgent.toLowerCase().indexOf("iphone") != -1 || userAgent.toLowerCase().indexOf("ipad") != -1) {
+                                        //    window.location = 'appname://loginCallback' + "#" + responseJsonParameters;
+                                        //} else if (userAgent.toLowerCase().indexOf("android") != -1) {
+                                        //    clientNative.loginCallback(responseJsonParameters);
+                                        //} else {
+                                        //    var ol5 = genJsonWebToken(responseJson);
+                                        //    var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                                        //    if (redirectUrl) {
+                                        //        window.location = redirectUrl + "?ol5=" + ol5;
+                                        //    }
+                                        //    //loginCallback(responseJsonParameters);
+                                        //    //										window.location = "http://www.ais.co.th/index.html";
+                                        //}
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        handleError(jsonData);
+                    }
+                }
+            });
+        }
+    });
+}
+
+function confirmUserPassLdap() {
+    var form = $(this).parents("form:first");
+    var username = $("#usernameLdap").val();//+ '@ais.co.th';
+    var password = $("#passwordLdap").val();
+    var tid = $("#tid").val();
+    //	$.post("/login/loginLDAP", {
+    //		username : username,
+    //		password : password
+    //	}, function(json) {
+    //		if (json.isSuccess == false) {
+    //			$('.msg-error').html(json.msg);
+    //			$('.loginError').show('slow', function(){});
+    //		} else {
+    var data = {
+        "commandId": tid.toString(),
+        "clientId": clientId,
+        "publicId": username,
+        "credential": password,
+        "loginType": "userpwd"
+    };
+    $("#publicId").val(data.publicId);
+    $("#setLoginType").val(data.loginType);
+
+    $.ajax({
+        type: 'POST',
+        url: '/acr',
+        data: data,
+        success: function (jsonData, textStatus, request) {
+            if (jsonData != null && jsonData.resultCode == "20000") {
+                xSessionId = request.getResponseHeader('x-session-id');
+                xApp = request.getResponseHeader('x-app');
+                xPrivate = request.getResponseHeader('x-partner-specific-private-id');
+
+                if (jsonData.registerFlag == true) {
+                    $("#moreInfo").val(jsonData.moreInfo);
+                    $("#myModalRegister").modal('show');
+                } else {
+                    $.ajax({
+                        type: 'POST',
+                        url: '/genSrfpToken',
+                        data: jsonData,
+                        headers: { 'X-Session-Id': xSessionId, 'X-App': xApp, 'X-Partner-Specific-Private-Id': xPrivate },
+                        success: function (data, textStatus, request) {
+                            if (data == null) {
+                                handleError(jsonData);
+                            } else {
+                                var responseJson = {};
+                                responseJson.ol4 = data;
+                                responseJson.xApp = xApp ? xApp : '';
+                                responseJson.privateId = jsonData.privateId ? jsonData.privateId : '';
+                                responseJson.resultCode = jsonData.resultCode;
+                                responseJson.developerMessage = jsonData.developerMessage ? jsonData.developerMessage : '';
+                                responseJson.authCode = jsonData.authCode ? jsonData.authCode : '';
+
+                                var responseJsonParameters = JSON.stringify(responseJson);
+
+                                var json = JSON.parse(responseJsonParameters);
+                                console.log("ol4::", responseJson.ol4);
+                                var ol5 = genJsonWebToken(responseJson);
+                                var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                                if (redirectUrl) {
+                                    window.location = redirectUrl + "?ol5=" + ol5;
+                                }
+                                //if (userAgent.toLowerCase().indexOf("iphone") != -1 || userAgent.toLowerCase().indexOf("ipad") != -1) {
+                                //    window.location = 'appname://loginCallback' + "#" + responseJsonParameters;
+                                //} else if (userAgent.toLowerCase().indexOf("android") != -1) {
+                                //    clientNative.loginCallback(responseJsonParameters);
+                                //} else {
+                                //    var ol5 = genJsonWebToken(responseJson);
+                                //    var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                                //    if (redirectUrl) {
+                                //        window.location = redirectUrl + "?ol5=" + ol5;
+                                //    }
+                                //    //loginCallback(responseJsonParameters);
+                                //    //		 								window.location = "http://www.ais.co.th/index.html";
+                                //}
+                            }
+                        }
+                    });
+                }
+            } else if (jsonData.resultCode == "40401" || jsonData.resultCode == "40101") {
+                $('.msg-error').html(jsonData.developerMessage);
+                $('.loginError').show('slow', function () { });
+            } else {
+                handleError(jsonData);
+            }
+        }
+    });
+    //		}
+    //	});
+}
+
+function confirmUserPassDs3() {
+    var form = $(this).parents("form:first");
+    var username = $("#username").val();//+ '@ais.co.th';
+    var password = $("#password").val();
+    var tid = $("#tid").val();
+    var data = {
+        publicId: username,
+        credential: password,
+        loginType: "userpwd3rd",
+        clientId: clientId,
+        commandId: tid.toString()
+    }
+    $("#publicId").val(data.publicId);
+    $("#setLoginType").val(data.loginType);
+
+    $.ajax({
+        type: 'POST',
+        url: '/acr',
+        data: data,
+        success: function (jsonData, textStatus, request) {
+            if (jsonData != null && jsonData.resultCode == "20000") {
+                xSessionId = request.getResponseHeader('x-session-id');
+                xApp = request.getResponseHeader('x-app');
+                xPrivate = request.getResponseHeader('x-partner-specific-private-id');
+                $.ajax({
+                    type: 'POST',
+                    url: '/genSrfpToken',
+                    data: jsonData,
+                    headers: { 'X-Session-Id': xSessionId, 'X-App': xApp, 'X-Partner-Specific-Private-Id': xPrivate },
+                    success: function (data, textStatus, request) {
+                        if (data == null) {
+                            handleError(jsonData);
+                        } else {
+                            var responseJson = {};
+                            responseJson.ol4 = data;
+                            responseJson.xApp = xApp ? xApp : '';
+                            responseJson.privateId = jsonData.privateId ? jsonData.privateId : '';
+                            responseJson.resultCode = jsonData.resultCode;
+                            responseJson.developerMessage = jsonData.developerMessage ? jsonData.developerMessage : '';
+                            responseJson.authCode = jsonData.authCode ? jsonData.authCode : '';
+
+                            var responseJsonParameters = JSON.stringify(responseJson);
+
+                            var json = JSON.parse(responseJsonParameters);
+                            console.log("ol4::", responseJson.ol4);
+                            var ol5 = genJsonWebToken(responseJson);
+                            var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                            if (redirectUrl) {
+                                window.location = redirectUrl + "?ol5=" + ol5;
+                            }
+                            //if (userAgent.toLowerCase().indexOf("iphone") != -1 || userAgent.toLowerCase().indexOf("ipad") != -1) {
+                            //    window.location = 'appname://loginCallback' + "#" + responseJsonParameters;
+                            //} else if (userAgent.toLowerCase().indexOf("android") != -1) {
+                            //    clientNative.loginCallback(responseJsonParameters);
+                            //} else {
+                            //    var ol5 = genJsonWebToken(responseJson);
+                            //    var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                            //    if (redirectUrl) {
+                            //        window.location = redirectUrl + "?ol5=" + ol5;
+                            //    }
+                            //    //loginCallback(responseJsonParameters);
+                            //    //							window.location = "http://www.ais.co.th/index.html";
+                            //}
+                        }
+                    }
+                });
+            } else if (jsonData.resultCode == "40401" || jsonData.resultCode == "40101") {
+                $('.msg-error').html(jsonData.developerMessage);
+                $('.loginError').show('slow', function () { });
+            } else {
+                handleError(jsonData);
+            }
+        }
+    });
+}
+
+function confirmEmail() {
+    var form = $(this).parents("form:first");
+    var email = $("#email").val();
+    var password = $("#passwordEmail").val();
+    var tid = $("#tid").val();
+    var data = {
+        publicId: email,
+        credential: password,
+        loginType: "email",
+        clientId: clientId,
+        commandId: tid.toString()
+    }
+    $("#publicId").val(data.publicId);
+    $("#setLoginType").val(data.loginType);
+    //	$.ajax({
+    //	 	type: 'POST',
+    //	 	url:'/verifyEmail',
+    //	 	data: {email : email, password : password},
+    //	 	success: function(jsonData, textStatus, request){
+    //	 		if(jsonData.success){
+    $.ajax({
+        type: 'POST',
+        url: '/acr',
+        data: data,
+        success: function (jsonData, textStatus, request) {
+            console.log("resultCode::", jsonData.resultCode);
+            if (jsonData != null && jsonData.resultCode == "20000") {
+                xSessionId = request.getResponseHeader('x-session-id');
+                xApp = request.getResponseHeader('x-app');
+                xPrivate = request.getResponseHeader('x-partner-specific-private-id');
+                $.ajax({
+                    type: 'POST',
+                    url: '/genSrfpToken',
+                    data: jsonData,
+                    headers: { 'X-Session-Id': xSessionId, 'X-App': xApp, 'X-Partner-Specific-Private-Id': xPrivate },
+                    success: function (data, textStatus, request) {
+                        if (data == null) {
+                            handleError(jsonData);
+                        } else {
+                            var responseJson = {};
+                            responseJson.ol4 = data;
+                            responseJson.xApp = xApp ? xApp : '';
+                            responseJson.privateId = jsonData.privateId ? jsonData.privateId : '';
+                            responseJson.resultCode = jsonData.resultCode;
+                            responseJson.developerMessage = jsonData.developerMessage ? jsonData.developerMessage : '';
+                            responseJson.authCode = jsonData.authCode ? jsonData.authCode : '';
+
+                            var responseJsonParameters = JSON.stringify(responseJson);
+
+                            var json = JSON.parse(responseJsonParameters);
+                            console.log("ol4::", responseJson.ol4);
+                            //loginCallback(responseJsonParameters);
+                            var ol5 = genJsonWebToken(responseJson);
+                            var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                            if (redirectUrl) {
+                                window.location = redirectUrl + "?ol5=" + ol5;
+                            }
+
+                            //if (userAgent.toLowerCase().indexOf("iphone") != -1 || userAgent.toLowerCase().indexOf("ipad") != -1) {
+                            //    window.location = 'appname://loginCallback' + "#" + responseJsonParameters;
+                            //} else if (userAgent.toLowerCase().indexOf("android") != -1) {
+                            //    clientNative.loginCallback(responseJsonParameters);
+                            //} else {
+                            //    //loginCallback(responseJsonParameters);
+                            //    var ol5 = genJsonWebToken(responseJson);
+                            //    var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                            //    if (redirectUrl) {
+                            //        window.location = redirectUrl + "?ol5=" + ol5;
+                            //    }
+                            //}
+                        }
+                    }
+                });
+            } else if (jsonData.resultCode == "40401" || jsonData.resultCode == "40101") {
+                $('.msg-error').html(jsonData.developerMessage);
+                $('.loginError').show('slow', function () { });
+            } else {
+                handleError(jsonData);
+            }
+        }
+    });
+    //	 		} else {
+    //	 			$('.msg-error').html("Invalid Email");
+    //				$('.loginError').show('slow', function(){});
+    //	 		}
+    //	 	}
+    //	 });
+}
+
+function confirmRegister() {
+    var moreInfo = $("#moreInfo").val();
+    var mobileNumber = $("#mobileNo").val();
+    var msisdn = "66" + mobileNumber.substring(1);
+    var tid = $("#tid").val();
+    var publicId = $("#publicId").val();
+    var setLoginType = $("#setLoginType").val();
+    var data = {
+        "commandId": tid.toString(),
+        "publicId": publicId != '' ? publicId : msisdn,
+        "loginType": setLoginType != '' ? setLoginType : "msisdn",
+        "clientId": clientId
+    }
+    $.ajax({
+        type: 'POST',
+        url: '/continueRegister',
+        headers: { 'X-Session-Id': xSessionId, 'X-App': xApp, 'X-Partner-Specific-Private-Id': xPrivate },
+        data: data,
+        success: function (jsonData, textStatus, request) {
+            if (jsonData != null && jsonData.resultCode == "20000") {
+                $.ajax({
+                    type: 'POST',
+                    url: '/genSrfpToken',
+                    data: jsonData,
+                    headers: { 'X-Session-Id': xSessionId, 'X-App': xApp, 'X-Partner-Specific-Private-Id': xPrivate },
+                    success: function (data, textStatus, request) {
+                        if (data == null) {
+                            handleError(jsonData);
+                        } else {
+                            var responseJson = {};
+                            responseJson.ol4 = data;
+                            responseJson.xApp = xApp ? xApp : '';
+                            responseJson.privateId = jsonData.privateId ? jsonData.privateId : '';
+                            responseJson.resultCode = jsonData.resultCode;
+                            responseJson.developerMessage = jsonData.developerMessage ? jsonData.developerMessage : '';
+                            responseJson.authCode = jsonData.authCode ? jsonData.authCode : '';
+
+                            var responseJsonParameters = JSON.stringify(responseJson);
+
+                            var json = JSON.parse(responseJsonParameters);
+                            console.log("ol4::", responseJson.ol4);
+                            if (userAgent.toLowerCase().indexOf("iphone") != -1 || userAgent.toLowerCase().indexOf("ipad") != -1) {
+                                window.location = 'appname://loginCallback' + "#" + responseJsonParameters;
+                            } else if (userAgent.toLowerCase().indexOf("android") != -1) {
+                                clientNative.loginCallback(responseJsonParameters);
+                            } else {
+                                loginCallback(responseJsonParameters);
+                                //window.location = "http://www.ais.co.th/index.html";
+                            }
+                        }
+
+                    }
+                });
+            } else {
+                handleError(jsonData);
+            }
+        }
+    });
+}
+
+function handleError(jsonData) {
+    $('#myModalRegister').modal('hide');
+    loginByB2CReturn = jsonData;
+    $("#myModalAlertMessage").html("ระบบไม่สามารถทำรายการได้ในขณะนี้ กรุณาติดต่อ 1175");
+    $("#myModalAlert").modal('show');
+
+}
+
+function confirmRegisterByEmail() {
+    var clientId = decodeURIComponent(window.location.pathname.replace('/', ''));
+    var moreInfo = $("#moreInfo").val();
+    var tid = $("#tid").val();
+    var publicId = $("#emailForRegister").val();
+    var setLoginType = $("#setLoginType").val();
+    var password = $("#registerPasswordEmail").val();
+    $.ajax({
+        type: 'POST',
+        url: '/verifyEmail',
+        data: { email: publicId },
+        success: function (jsonData, textStatus, request) {
+            var data = {
+                "commandId": tid.toString(),
+                "publicId": publicId,
+                "loginType": setLoginType != '' ? setLoginType : "email",
+                "clientId": clientId,
+                "credential": password
+            };
+            if (jsonData.success) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/registerManual',
+                    headers: { 'X-Session-Id': xSessionId, 'X-App': xApp, 'X-Partner-Specific-Private-Id': xPrivate },
+                    data: data,
+                    success: function (jsonData, textStatus, request) {
+                        if (jsonData != null && jsonData.resultCode == "20100") {
+                            $("#emailForRegister").val('');
+                            $("#registerPasswordEmail").val('');
+                            $("#registerConfirmPasswordEmail").val('');
+                            $('.nav-tabs a[href="#' + 'byEmail' + '"]').tab('show');
+                        } else if (jsonData != null && jsonData.resultCode == "20000") {
+                            $("#emailForRegister").val('');
+                            $("#registerPasswordEmail").val('');
+                            $("#registerConfirmPasswordEmail").val('');
+                            xSessionId = request.getResponseHeader('x-session-id');
+                            xApp = request.getResponseHeader('x-app');
+                            xPrivate = request.getResponseHeader('x-partner-specific-private-id');
+                            $.ajax({
+                                type: 'POST',
+                                url: '/genSrfpToken',
+                                data: jsonData,
+                                headers: { 'X-Session-Id': xSessionId, 'X-App': xApp, 'X-Partner-Specific-Private-Id': xPrivate },
+                                success: function (data, textStatus, request) {
+                                    if (data == null) {
+                                        handleError(jsonData);
+                                    } else {
+                                        var responseJson = {};
+                                        responseJson.ol4 = data;
+                                        responseJson.xApp = xApp ? xApp : "";
+                                        responseJson.privateId = jsonData.privateId ? jsonData.privateId : "";
+                                        responseJson.resultCode = jsonData.resultCode;
+                                        responseJson.developerMessage = jsonData.developerMessage ? jsonData.developerMessage : "";
+                                        responseJson.authCode = jsonData.authCode ? jsonData.authCode : "";
+
+                                        var responseJsonParameters = JSON.stringify(responseJson);
+
+                                        var json = JSON.parse(responseJsonParameters);
+
+                                        console.log("ol4::", responseJson.ol4);
+                                        var ol5 = genJsonWebToken(responseJson);
+                                        var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                                        if (redirectUrl) {
+                                            window.location = redirectUrl + "?ol5=" + ol5;
+                                        }
+                                        //if (userAgent.toLowerCase().indexOf("iphone") != -1 || userAgent.toLowerCase().indexOf("ipad") != -1) {
+                                        //    window.location = 'appname://loginCallback' + "#" + responseJsonParameters;
+                                        //} else if (userAgent.toLowerCase().indexOf("android") != -1) {
+                                        //    clientNative.loginCallback(responseJsonParameters);
+                                        //} else {
+                                        //    //loginCallback(responseJsonParameters);
+                                        //    var ol5 = genJsonWebToken(responseJson);
+                                        //    var redirectUrl = getParameterByName('redirect_uri', window.location.href);
+                                        //    if (redirectUrl) {
+                                        //        window.location = redirectUrl + "?ol5=" + ol5;
+                                        //    }
+                                        //}
+                                    }
+
+                                }
+                            });
+
+                        } else {
+                            handleError(jsonData);
+                        }
+                    }
+                });
+            } else {
+                $('#myModalRegister').modal('hide');
+                loginByB2CReturn = jsonData;
+                $("#myModalAlertMessage").html("Email ของคุณไม่ถูกต้อง กรุณาทำรายการใหม่อีกครั้ง");
+                $("#myModalAlert").modal('show');
+            }
+        }
+    });
+
+
+}
+
+
+function convertStringToJson(listString) {
+    if (listString) {
+        var decodedData = Base64.decode(listString);
+        var listObj = '';
+        try {
+            listObj = JSON.parse(decodedData.replace(/&quot;/g, '"'));
+            return listObj
+        } catch (ex) {
+            $('#myModalError').modal("show");
+            $('.modal-body').html("Please contact customer services.");
+        }
+        return false;
+    }
+    return false;
+}
+
+function isEmptyObject(obj) {
+    return (Object.getOwnPropertyNames(obj).length === 1);
+}
+
+function genHtmlListOfSubscribedPublicId(listString) {
+    var html = '';
+    var listObj = convertStringToJson(listString);
+    if (listObj && !isEmptyObject(listObj)) {
+        for (var index in listObj) {
+            html += "<div class=\"row\">";
+            html += "<div class=\"col-md-12 login-public-id\" index=\"" + index + "\">" + listObj[index].publicId + "</div>";
+            html += "</div>";
+        }
+    } else {
+        html = 'No Data Found.'
+    }
+    $('#listOfSubscribedPublicId').html(html);
+}
+
+function addClassSuccess(id) {
+    $('#' + id + '-feedback').show();
+    $('#' + id + '-feedback').removeClass('glyphicon-remove');
+    $('#div-' + id).removeClass('has-error');
+    $('#' + id + '-feedback').addClass('glyphicon-ok');
+    $('#div-' + id).addClass('has-success');
+    $('#' + id + '-feedback').removeClass('form-control-feedback-right');
+}
+function addClassError(id) {
+    $('#' + id + '-feedback').show();
+    $('#' + id + '-feedback').removeClass('glyphicon-ok');
+    $('#div-' + id).removeClass('has-success');
+    $('#' + id + '-feedback').addClass('glyphicon-remove');
+    $('#div-' + id).addClass('has-error');
+    $('#' + id + '-feedback').removeClass('form-control-feedback-right');
+}
+function removeAllClass(id) {
+    $('#' + id + '-feedback').hide();
+    $('#' + id + '-feedback').removeClass('glyphicon-remove');
+    $('#div-' + id).removeClass('has-error');
+    $('#' + id + '-feedback').removeClass('glyphicon-ok');
+    $('#div-' + id).removeClass('has-success');
+}
+function isValidEmail(email) {
+    var regExp = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
+    return regExp.test(email);
+}
+
+function validateEmail(email) {
+    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+}
+
+function validateFbb() {
+    var fbbid = $("#mobileNo").val() + "@playbox.co.th";
+    var password = $("#password-login").val();
+    var authenType = $("#authenType").val();
+    $.post(contextPath + "/login/validateFbb", {
+        fbbid: fbbid,
+        password: password,
+        authenType: authenType,
+        uri: uri
+    }, function (json) {
+        if (typeof json == "object") {
+            json.authenType = 'fbb';
+            $('#json-string').val(JSON.stringify(json));
+            if (json.status) {
+                $('#myModalAlert').modal("show");
+                $('.modal-body').html("login สำเร็จ");
+            } else {
+                $('#myModalAlert').modal("show");
+                $('.modal-body').html("FBBID หรือ Password ไม่ถูกต้อง กรุณาตรวจสอบและ Login ใหม่อีกครั้ง");
+            }
+        } else {
+            json.authenType = 'confirmotp';
+            $('#json-string').val(JSON.stringify(json));
+            $('#myModalAlert').modal("show");
+            $('.modal-body').html("Please contact customer services.");
+        }
+    });
+}
+
+function genJsonWebToken(obj) {
+    // Header
+    var oHeader = { alg: 'HS256', typ: 'JWT' };
+    // Payload
+    var oPayload = {};
+    var tNow = KJUR.jws.IntDate.get('now');
+    var tEnd = KJUR.jws.IntDate.get('now + 1day');
+    oPayload = obj;
+    // Sign JWT, password=616161
+    var sHeader = JSON.stringify(oHeader);
+    var sPayload = JSON.stringify(oPayload);
+    var sJWT = KJUR.jws.JWS.sign("HS256", sHeader, sPayload, "SRFPTOKENKEY");
+    return sJWT;
+}
+
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+$(document).ready(
+    function () {
+        $("#email").keypress(function (e) {
+            removeAllClass($(this).attr('id'))
+        });
+        $("#email").focusout(function (e) {
+            if (isValidEmail($("#email").val())) {
+                addClassSuccess($("#email").attr('id'));
+                $('#loginbyEmail').removeAttr('disabled');
+            } else {
+                addClassError($("#email").attr('id'));
+            }
+        });
+
+        $('.loginError').hide();
+        $('.loginSuccess').hide();
+        $('#mobileNo').focus();
+
+        $("#reqOpt").click(function () {
+            if ($("#mobileNo").val().length < 10 || $("#mobileNo").val().charAt(0).indexOf('0') == -1) {
+                $('.msg-error').html('กรุณากรอกข้อมูลหมายเลขโทรศัพท์ให้ถูกต้อง');
+                $('.loginError').show('slow', function () { });
+            } else {
+                $('.loginError').hide('fast', function () { });
+                sendOTP();
+            }
+        });
+
+        $("#loginbyOTP").click(function () {
+            $('#loginbyOTP').attr('disabled', 'disabled');
+            confirmOTP();
+        });
+
+        $("#loginbyUserPassLdap").click(function () {
+            if ($("#usernameLdap").val() === '' || $("#passwordLdap").val() === '') {
+                $('.msg-error').html('กรุณากรอกข้อมูลให้ครบถ้วน');
+                $('.loginError').show('slow', function () { });
+            } else {
+                confirmUserPassLdap();
+            }
+        });
+
+        $("#loginbyUserPassDs3").click(function () {
+            if ($("#username").val() === '' || $("#password").val() === '') {
+                $('.msg-error').html('กรุณากรอกข้อมูลให้ครบถ้วน');
+                $('.loginError').show('slow', function () { });
+            } else {
+                confirmUserPassDs3();
+            }
+        });
+
+        $("#loginbyEmail").click(function () {
+            if ($("#email").val() === '' || $("#passwordEmail").val() === '') {
+                $('.msg-error').html('กรุณากรอกข้อมูลให้ครบถ้วน');
+                $('.loginError').show('slow', function () { });
+            } else {
+                confirmEmail();
+            }
+        });
+
+        $('#registerByEmail').click(function () {
+            if ($("#emailForRegister").val() === '' || $("#registerPasswordEmail").val() === '') {
+                $('.msg-error').html("กรุณาระบุ Email และ Password");
+                $('.loginError').show('slow', function () { });
+            }
+            else if (!validateEmail($("#emailForRegister").val())) {
+                $('.msg-error').html("กรุณาระบุ Email ให้ถูกต้อง");
+                $('.loginError').show('slow', function () { });
+            }
+            else if ($("#registerPasswordEmail").val() !== $("#registerConfirmPasswordEmail").val()) {
+                $('.msg-error').html("กรุณาระบุ Password และ Confirm Password ให้ตรงกัน");
+                $('.loginError').show('slow', function () { });
+            } else {
+                confirmRegisterByEmail();
+            }
+        });
+
+        $('#confirmRegister').click(function () {
+            confirmRegister();
+        });
+
+        $('#cancel').click(function () {
+            var url = "http://www.ais.co.th/thankyou_ais/";
+            $(location).attr('href', url);
+        });
+
+        $("#mobileNo").keydown(function (e) {
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A
+                (e.keyCode == 65 && e.ctrlKey === true) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number and stop the keypress
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+
+        $("#otp").keyup(function (e) {
+            if ($("#otp").val().length < 4) {
+                $('#loginbyOTP').attr('disabled', 'disabled');
+            } else {
+                $('#loginbyOTP').removeAttr('disabled');
+            }
+        });
+
+        $("#otp").keydown(function (e) {
+            // Allow: backspace, delete, tab, escape, enter and .
+            if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 110, 190]) !== -1 ||
+                // Allow: Ctrl+A
+                (e.keyCode == 65 && e.ctrlKey === true) ||
+                // Allow: home, end, left, right, down, up
+                (e.keyCode >= 35 && e.keyCode <= 40)) {
+                // let it happen, don't do anything
+                return;
+            }
+            // Ensure that it is a number and stop the keypress
+
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+
+        $("#username").keyup(function (e) {
+            var r = e.target.value.split('').length;
+            var c = ((e.target.value).charAt(r - 1));
+            if (c == '@') {
+                var str = (e.target.value).slice(0, (r - 1));
+                $("#username").val(str);
+                e.preventDefault();
+            }
+        });
+
+        $("#usernameLdap").keyup(function (e) {
+            var r = e.target.value.split('').length;
+            var c = ((e.target.value).charAt(r - 1));
+            if (c == '@') {
+                var str = (e.target.value).slice(0, (r - 1));
+                $("#usernameLdap").val(str);
+                e.preventDefault();
+            }
+        });
+
+        /* Old Device Handling*/
+        genHtmlListOfSubscribedPublicId(listString);
+        $('.login-public-id').click(function () {
+            var index = $(this).attr('index');
+            var listObj = convertStringToJson(listString);
+            if (listObj && !isEmptyObject(listObj)) {
+                var params = "?uri=" + uriLoginPublicId + "&privateId=" + privateId + "&publicId=" + listObj[index].publicId + "&authenType=userpassword";
+                var url = contextPath + "/register/loginPublicId" + params;
+                $(location).attr('href', url);
+            } else {
+                $('#myModalError').modal("show");
+                $('.modal-body').html("Please contact customer services.");
+            }
+        });
+        /* Old Device Handling*/
+
+        /* Login Public Id*/
+        if (status) {
+            if (status == "Success") {
+                $('#back').hide();
+            } else {
+                $('#back').show();
+            }
+        }
+
+        $('#myModalAlertRedo').click(function () {
+            $("#mobileNo").val('');
+            $("#otp").val('');
+            $(".otp-content").hide();
+            $('.loginError').hide();
+            $("#myModalAlert").modal('hide');
+        });
+
+        $('#myModalAlertCancel').click(function () {
+            var responseJsonParameters = JSON.stringify(loginByB2CReturn);
+            if (userAgent.toLowerCase().indexOf("iphone") != -1 || userAgent.toLowerCase().indexOf("ipad") != -1) {
+                window.location = 'appname://errorCallback' + "#" + responseJsonParameters;
+            } else if (userAgent.toLowerCase().indexOf("android") != -1) {
+                clientNative.errorCallback(responseJsonParameters);
+            } else {
+                $("#myModalAlert").modal('hide');
+                //errorCallback(responseJsonParameters);
+                //window.location = "http://www.ais.co.th/index.html";
+            }
+        });
+
+        $('#cancelRegister').click(function () {
+            $("#myModalRegister").modal('hide');
+            var jsonData = { "resultCode": "1", "developerMessage": "cancel", "registerFlag": true }
+            var responseJsonParameters = JSON.stringify(jsonData);
+            var json = JSON.parse(responseJsonParameters);
+            if (userAgent.toLowerCase().indexOf("iphone") != -1 || userAgent.toLowerCase().indexOf("ipad") != -1) {
+                window.location = 'appname://errorCallback' + "#" + responseJsonParameters;
+            } else if (userAgent.toLowerCase().indexOf("android") != -1) {
+                clientNative.errorCallback(responseJsonParameters);
+            } else {
+                errorCallback(responseJsonParameters);
+                //window.location = "http://www.ais.co.th/index.html";
+            }
+        });
+
+        $('#myModalSessionOk').click(function () {
+            $('#myModalSessionAlert').modal('hide');
+            $("#myModalAlert").modal('hide');
+            var jsonData = { "resultCode": "1", "developerMessage": "cancel", "registerFlag": true };
+            var responseJsonParameters = JSON.stringify(jsonData);
+            if (userAgent.toLowerCase().indexOf("iphone") != -1 || userAgent.toLowerCase().indexOf("ipad") != -1) {
+                window.location = 'appname://errorCallback' + "#" + responseJsonParameters;
+            } else if (userAgent.toLowerCase().indexOf("android") != -1) {
+                clientNative.errorCallback(responseJsonParameters);
+            } else {
+                errorCallback(responseJsonParameters);
+                //window.location = "http://www.ais.co.th/index.html";
+            }
+        });
+
+        setTimeout(function () {
+            $('#myModalSessionAlert').modal('show');
+            $("#myModalRegister").modal('hide');
+        }, 300000);
+
+        $(document).ajaxStart(function () {
+            $('#myModalLoading').modal('show');
+        });
+
+        $(document).ajaxComplete(function () {
+            $('#myModalLoading').modal('hide');
+        });
+    }
+);

@@ -1,0 +1,102 @@
+
+
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+body {
+    /* Margin bottom by footer height */
+    margin-bottom: 180px;
+}
+footer {
+    font-size: 1rem;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding-top: 160px;
+    /* Set the fixed height of the footer here */
+    height: 180px;
+    line-height: 1px; /* Vertically center the text there */
+
+}
+
+
+/* Custom page CSS
+-------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+
+
+.footer > .container {
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.img-sticker{
+    width: 150px;
+    height: 150px;
+    margin-bottom: 1em;
+}
+
+
+.bg-login{
+    /* background: url("../images/bg.jpg") no-repeat; */
+    background-size: 100%;
+    background-color: #fff;
+
+}
+.text-th-login{
+
+}
+.bg-footer{
+    display: block;
+    background: url("../images/bg-foot-green.png") no-repeat top;
+    background-size: cover;
+
+}
+.text-green{
+    color: #aad353 !important;
+}.text-orange{
+    color: #f7754d !important;
+}
+
+.btn-green {
+    color: #111;
+    background-color: #aad353;
+    border-color: #aad353;
+}
+
+.btn-green:hover {
+    color: #111;
+    background-color: #7ea043;
+    border-color: #7ea043;
+}
+
+.btn-green:focus, .btn-green .focus {
+    box-shadow: 0 0 0 3px rgba(248, 249, 250, 0.5);
+}
+
+.pic-logo {
+    margin-top: 10%;
+}
+/* @media only screen and (max-width: 320px) {
+    #welcome{
+        font-size: 18px;
+    }
+}
+@media only screen and (min-width: 411px) {
+    #welcome{
+        font-size: 24px;
+    }
+}
+@media only screen and (min-width: 768px) {
+    #welcome{
+        font-size: 26px;
+    }
+}
+@media only screen and (min-width: 1024px) {
+    #welcome{
+        font-size: 36px;
+    }
+} */
+

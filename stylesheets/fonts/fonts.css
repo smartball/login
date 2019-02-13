@@ -1,0 +1,44 @@
+@charset "UTF-8";
+
+@font-face {
+    font-family: 'AIS65';
+	
+    src: url('../fonts/helvethaica-webfont.eot');
+    src: url('../fonts/helvethaica-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/helvethaica-webfont.woff') format('woff'),
+         url('../fonts/helvethaica-webfont.ttf') format('truetype'),
+         url('../fonts/helvethaica-webfont.svg#db_helvethaicaais_x65_med') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+@font-face {
+    font-family: 'AIS55';
+    src: url('../fonts/helvethaicaais55.eot');
+    src: url('../fonts/helvethaicaais55.eot') format('embedded-opentype'),
+         url('../fonts/helvethaicaais55.woff') format('woff'),
+         url('../fonts/helvethaicaais55.ttf') format('truetype'),
+         url('../fonts/helvethaicaais55.svg#DBHelvethaicaAISX55Regular') format('svg');
+
+		   font-weight:lighter;
+    font-style:lighter;
+}
+
+.f24{
+	font-family:'AIS55';
+	font-size:24px;
+	font-weight:normal;
+}
+.f28{
+	font-family:'AIS55';
+	font-size:28px;
+	font-weight:normal;
+}
+.f32{
+	font-family:'AIS55';
+	font-size:28px;
+	font-weight:normal;
+}
+.Geeen{color:#9dca46;}
+
+

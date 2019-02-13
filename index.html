@@ -1,0 +1,195 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Authentication</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="layout" content="login" />
+
+    <!-- Bootstrap CSS -->
+
+    <link rel="stylesheet" href="/template/pages/{{template_name}}/css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="/template/pages/{{template_name}}/css/dialog/theme.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/template/pages/{{template_name}}/fonts/DBHelvethaica.css">
+    <link rel="stylesheet" href="/template/pages/{{template_name}}/css/control.css">
+    <!--<link rel="stylesheet" type="text/css" href="/template/pages/login2/stylesheets/fontawesome/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="/template/pages/login2/stylesheets/dialog/theme.css">-->
+    <!--<link rel="stylesheet" type="text/css" href="/template/pages/{{template_name}}/css/fontawesome/font-awesome.min.css">-->
+    <script type="text/javascript" src="/template/pages/{{template_name}}/js/jquery/1.11.3/jquery.min.js"></script>
+    <script type="text/javascript" src="/template/pages/{{template_name}}/js/bootstrap/bootstrap.min.js"></script>
+    <!--<script type="text/javascript" src="/template/pages/vdo-store-login/js/login/login.js"></script>-->
+    <script type="text/javascript" src="/template/pages/{{template_name}}/js/controller/loginController.js"></script>
+    <script type="text/javascript" src="/template/pages/{{template_name}}/js/login/auto.js"></script>
+    <script type="text/javascript" src="/template/pages/{{template_name}}/js/jwt/jsrsasign-8.0.2/jsrsasign-all-min.js"></script>
+    <script src="https://assets.adobedtm.com/75133ce79ba1f2c516f7d5f09b683f779a12ac39/satelliteLib-2756bab2480cb6c2674fb064e707912a7e9432b2-staging.js"></script>
+    <!-- <script src="https://assets.adobedtm.com/75133ce79ba1f2c516f7d5f09b683f779a12ac39/satelliteLib-2756bab2480cb6c2674fb064e707912a7e9432b2.js"></script> -->
+    <script>
+        if ("{{loginType}}" == 'auto') {
+            var authCodeExpiry = "{{authCodeExpiry}}";
+            var authCode = "{{authCode}}";
+            var privateId = "{{privateId}}";
+            var setHeader = "{{headers}}";
+            auto();
+        }
+    </script>
+</head>
+
+<body class="bg-login">
+    <script>
+        digitalData = {
+          page: {
+            pageInfo: {
+              pageName: "srf:linebcm:login",
+            }
+          }
+        }
+      </script>
+
+    <div class="container db_heaventcond-li">
+        <div class="row justify-content-center">
+            <div class="col-10 col-sm-8 col-md-6 ">
+                <p class="clearfix mb-5"></p>
+                <div class="row justify-content-center">
+                    <img src="/template/pages/{{template_name}}/images/07.png" class="img-sticker" alt="">
+                </div>
+                <div class="form-group">
+                    <!-- <h3 class="db_heaventcond"><img class="mb-2" src="/template/pages/{{template_name}}/images/i-lock-black.png" width="20" height="auto"> <span class="text-green" id="wordLogin">Login</span></h3> -->
+                    <div class="text-black" id="welcome">
+                        For your convenience, security and privacy. You do not have to remember your password. Please provide 10 digit mobile number for one time password.
+                    </div>
+                    <div class="alert alert-danger loginError" role="alert" style="display: none;">
+                        <i class="fa fa-times"></i>
+                        <span class="sr-only">Error:</span>
+                        <span class='msg-error'></span>
+                    </div>
+                    <p class="clearfix"></p>
+                    <input type="text" id="mobileNo" class="form-control" maxlength='10' number-only required ng-model="mobileNumber" placeholder="Mobile Number">
+                    <!--Tab To Request OTP-->
+                    <div id="requestOtp">
+                        <p class="clearfix"></p>
+                        <button type="button" id="reqOpt" class="btn btn-green btn-block">Get Password</button>
+                    </div>
+                    <!--Tab To Confirm OTP-->
+                    <div id="confirmOtp" class="otp-content" style="display: none;">
+                        <p class="clearfix"></p>
+                        <input type="password" id="otp" name="otp" class="form-control text-green" maxlength='4' placeholder="">
+                        <p class="clearfix"></p>
+                        <h5 class="text-black text-center"> <i class="material-icons">replay</i> <a id="reqOptAgain" href="javascript:void(0)"><u
+                                    class="align-top" id="resend">Get password again.</u></a></h5>
+                        <p class="clearfix"></p>
+                        <div class="text-black"><span id="textEnterPass-1">Please enter the password received by </span>
+                            <span class="text-orange">SMS</span><span id="toLogin"> to login.</span><br>
+                            <span id="yourPass">Your password is </span><span class="text-orange" id="limitTime">valid for
+                                5 minutes.</span>
+                        </div>
+                        <p class="clearfix"></p>
+                        <button type="button" id="loginbyOTP" class="btn btn-green btn-block"> Submit </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!--END Main Container-->
+    <div class="modal fade" id="myModalAlert" data-backdrop="static" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content white">
+                <div class="modal-body">
+                    <p id="myModalAlertMessage"></p>
+                </div>
+                <div class="modal-footer no-paddind">
+                    <table class="table">
+                        <tr>
+                            <td id="myModalAlertRedo">Please try again later.</td>
+                            <td id="myModalAlertCancel" style="border-right: none">Cancel</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="myModalLoading" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop='static'>
+        <div class="modal-dialog-center">
+            <div class="modal-content">
+                <div class="modal-header text-center">
+                    <i class='fa fa-spinner fa-spin spin-otp'></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register modal-->
+    <div class="modal fade" id="myModalRegister" data-backdrop="static" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content white">
+                <div class="modal-body">
+                    <input type="hidden" id='moreInfo' value="">
+                    <div id="myModalRegisterMessage">
+                        <h2 id="notRegister">You have not registered yet.</h2>
+                        <p id="doWantRegister">Do you want to register?</p>
+                    </div>
+                </div>
+                <div class="modal-footer no-paddind">
+                    <table class="table">
+                        <tr>
+                            <td id="confirmRegister">Confirm</td>
+                            <td id="cancelRegister" style="border-right: none">Cancel</td>
+                        </tr>
+                    </table>
+                    <!-- <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                     <button type="button" class="btn btn-default" id="confirmRegister">Confirm</button> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center">
+        <span class="text-black"> © 2017 ADVANCED INFO SERVICE PLC. ALL RIGHTS RESERVED.</span>
+    </footer>
+    <!-------------------END---FOOTTER---------------------->
+    <input type="hidden" id='tid' value="{{tid}}">
+    <input type="hidden" id='transactionID' value="">
+    <input type="hidden" id='serviceId' value="{{serviceId}}">
+    <input type="hidden" id='accountType' value="{{accountType}}">
+    <input type="hidden" id='otpChannel' value="{{otpChannel}}">
+    <input type="hidden" id='publicId' value="">
+    <input type="hidden" id='setLoginType' value="">
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <!--
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+-->
+<script>
+    const userLanguage = navigator.language || navigator.userLanguage;
+
+    // if (userLanguage === 'th-TH') {
+        // document.getElementById('wordLogin').innerHTML = 'ล็อกอิน'
+        document.getElementById('welcome').innerHTML = 'กรุณาระบุหมายเลขโทรศัพท์มือถือเพื่อดาวน์โหลดสติกเกอร์ และยินยอมให้ AIS LINE Official ส่งข้อมูลเพื่อประชาสัมพันธ์บริการที่เหมาะสมกับกลุ่มผู้ใช้งาน และเข้าใช้งานได้สะดวกขึ้นในครั้งต่อไป'
+        document.getElementById('mobileNo').placeholder = 'หมายเลขโทรศัพท์'
+        document.getElementById('reqOpt').innerHTML = 'รับรหัส OTP'
+        document.getElementById('resend').innerHTML = 'รับรหัส OTP อีกครั้ง'
+        document.getElementById('textEnterPass-1').innerHTML = 'กรุณาระบุรหัสผ่านที่ได้รับทาง '
+        document.getElementById('toLogin').innerHTML = ' เพื่อเข้าสู่ระบบ'
+        document.getElementById('yourPass').innerHTML = 'รหัสผ่านของคุณ'
+        document.getElementById('limitTime').innerHTML = 'มีอายุการใช้งาน 5 นาที'
+        document.getElementById('loginbyOTP').innerHTML = 'ยืนยัน'
+        document.getElementById('myModalAlertRedo').innerHTML = 'กรุณาทำรายการใหม่ภายหลัง'
+        document.getElementById('myModalAlertCancel').innerHTML = 'ยกเลิก'
+        document.getElementById('confirmRegister').innerHTML = 'ตกลง'
+        document.getElementById('cancelRegister').innerHTML = 'ยกเลิก'
+        document.getElementById('notRegister').innerHTML = 'คุณยังไม่ได้สมัครใช้บริการ'
+        document.getElementById('doWantRegister').innerHTML = 'คุณต้องการสมัครใช้บริการหรือไม่?'
+    // }
+</script>
+<script type="text/javascript">_satellite.pageBottom();</script>
+</body>
+
+</html>

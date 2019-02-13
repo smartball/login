@@ -1,0 +1,321 @@
+﻿@charset "UTF-8";
+
+@font-face {
+    font-family: 'AIS65';
+	
+    src: url('../fonts/helvethaica-webfont.eot');
+    src: url('../fonts/helvethaica-webfont.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/helvethaica-webfont.woff') format('woff'),
+         url('../fonts/helvethaica-webfont.ttf') format('truetype'),
+         url('../fonts/helvethaica-webfont.svg#db_helvethaicaais_x65_med') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+@font-face {
+    font-family: 'AIS55';
+    src: url('../fonts/helvethaicaais55.eot');
+    src: url('../fonts/helvethaicaais55.eot') format('embedded-opentype'),
+         url('../fonts/helvethaicaais55.woff') format('woff'),
+         url('../fonts/helvethaicaais55.ttf') format('truetype'),
+         url('../fonts/helvethaicaais55.svg#DBHelvethaicaAISX55Regular') format('svg');
+
+		   font-weight:lighter;
+    font-style:lighter;
+}
+
+
+body {
+
+
+  background:url(../images/bg.png) no-repeat bottom center;
+  background-size:cover;
+  background-color:#F5F1F0;
+  margin-bottom: 160px;
+  
+  
+}
+
+input,
+optgroup,
+select,
+textarea {
+  margin: 0;
+  font-family:'ais55';
+  font-size:16px;
+  color: inherit;
+}
+.starter-template {
+  padding: 40px 15px;
+  text-align: center;
+}
+.BGWhite{ background-color:#fff; height:auto;
+/*border-color: #aaa;
+  -webkit-box-shadow:0px 1px 2px -1px rgba(0,0,0,0.65), 0 0 8px rgba(151, 150, 149, .6);
+          box-shadow:0px 1px 2px -1px rgba(0,0,0,0.65), 0 0 8px rgba(151, 150, 149, .6);
+		  border-radius:4px;
+		  */
+}
+.logoAIS{
+	float:right;
+	margin-top:0px;
+  padding-right:10px;
+	}
+.logoiphone{
+	float:left;
+	width:112px;
+	height:61px;
+	margin-left:5px;
+	margin-top:4px;
+	}
+.fontsize48{ font-family:ais55;
+font-size:48px; font-weight:normal;}
+.fontsize36{ font-family:ais55;
+font-size:36px; font-weight:normal;}
+.fontsize28{ font-family:ais55;
+font-size:28px; font-weight:normal;}
+.fontsize18{font-family:ais55;
+font-size:18px; font-weight:normal;}
+.font-bold{
+	font-weight:bold;}
+thead{font-weight:normal; font-size:14px;}
+section{ margin:5px auto 10px auto;}	
+
+h1{ font-size:28px;}
+h5{ font-size:18px;}
+/*------color-------*/
+.red{ color:#f47063;}
+.AppleGreen{ color:#acc42a;}
+.Teal{color:#00bfa5;}
+.SelectiveYellow{color:#ffbc00;}
+.Coral{color:#ff7043;}
+.gray{color:#8C8C8C;}
+.Breaker-Bay{background-color:#63A5A2; color:#ffffff;}
+.BGgray{background-color:#ddd;}
+
+
+
+
+/* table stickmen color
+-------------------------------------------------- */
+.pink{ color:#f69988;}
+.Atomic-tangerine{ color:#fbaa78;}
+.Peach-orange{ color:#ffbf65;}
+.Sunglow{ color:#ffd452;}
+.Gold{ color:#ffe641;}
+.Yellow{color:#fbeb3b;}
+.Chartreuse{color:#e8e83b;}
+.Bitter-Lemon{color:#d0e03c;}
+.Yellow-green{color:#b6d541;}
+.Atlantis{color:#9dca46;}
+.Sushi{color:#89B62F; margin-top: 0}
+
+
+
+
+
+
+
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+.btnlan {
+  display: inline-block;
+  padding: 1px 4px;
+  margin-bottom: 0;
+  min-width:20px;
+   font-size:18px;
+  font-weight: normal;
+  font-family:'ais55';
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+  background-image: none;
+  border-radius: 4px;
+  font-family:ais55;
+  background-color:#74a333;
+}
+.btnlan:focus,
+.btnlan:active:focus,
+.btnlan.active:focus {
+  
+  outline: 1px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+.btnlan:hover,
+.btnlan:focus {
+  color: #333;
+  text-decoration: none;
+}
+.btnlan:active,
+.btnlan.active {
+  background-image: none;
+  outline: 0;
+}
+
+/* Custom page CSS
+-------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+
+body > .container {
+  padding: 0px 15px 0;
+  
+}
+.container .text-muted {
+	color: #463738;
+	text-align: center;
+	font-size: 13px;
+}
+
+.footer > .container {
+  bottom: 0;
+}
+
+code {
+  font-size: 60%;
+}
+
+.margin_bottom {
+	margin-bottom: 15px;
+}
+
+.bg_img {
+	background: url(../../images/bg.png) no-repeat bottom center #fff;
+	margin-top: 0px;
+	margin-right: 0px;
+}
+
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
+  color: #74a333;
+}
+
+.center {
+  text-align: center;
+  margin: auto;
+}
+
+.facebook-color {
+  color: #3B5998;
+}
+
+.twitter-color {
+  color: #1DA1F2;
+}
+
+.googleplus-color {
+  color: #db4437;
+}
+
+a {
+    color: #007bff;
+    text-decoration:  underline;
+}
+
+a:hover, a:focus {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.clickHere {
+  cursor: pointer;
+}
+
+#backButton{
+  color: #89B62F;
+  font-weight: bold;
+}
+
+#or{
+  font-size: 25px;
+  color: #89B62F;
+  font-weight: bold;
+}
+
+.has-success .form-control, .has-success .form-control:focus  {
+  border-color: #adc32b;
+}
+.has-success .form-control:focus {
+  -webkit-box-shadow: 0 0 8px 3px rgba(223, 241, 77, .6);
+  -moz-box-shadow: 0 0 8px 3px rgba(223, 241, 77, .6);
+  box-shadow: 0 0 8px 3px rgba(223, 241, 77, .6);
+}
+.has-success .form-control-feedback {
+  color: #adc32b;
+}
+.has-error .form-control {
+    box-shadow: none;
+}
+.has-error .form-control:focus {
+  -webkit-box-shadow: 0px 0px 8px 3px rgba(132, 53, 52, .6);
+  -moz-box-shadow: 0px 0px 8px 3px rgba(132, 53, 52, .6);
+  box-shadow: 0px 0px 8px 3px rgba(132, 53, 52, .6);
+}
+.form-control-feedback {
+  top: 0px;
+  right: 10px;
+}
+.form-control-feedback-right {
+  right: 105px;
+}
+
+.white {
+  background-color: #fff;
+}
+
+.btn-danger {
+  background-color: #a6a6a6;
+  border-color: #a6a6a6;
+}
+
+.btn-danger:hover {
+  background-color: #8c8c8c;
+  border-color: #8c8c8c;
+}
+
+.table{
+  border: medium none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-collapse: collapse;
+    border-spacing: 0;
+  max-width: 100%;
+    width: 100%;
+}
+.table > thead > tr > th, .table > tbody > tr > th, .table > tfoot > tr > th, .table > thead > tr > td, .table > tbody > tr > td, .table > tfoot > tr > td {
+    border: 0px;
+    line-height: 1.4;
+    padding: 8px;
+    vertical-align: top;
+}
+td{
+  width: 50%;
+  font-size: 20px;
+  color: #74a333;
+}
+td:hover {
+  cursor: pointer;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+}
+
+.no-paddind {
+  padding: 0px;
+}
+
+.address {
+	font-size: 22px;
+	font-style: italic;
+}
+
+

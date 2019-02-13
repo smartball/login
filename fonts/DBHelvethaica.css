@@ -1,0 +1,9 @@
+@import url('http://www.ais.co.th/base_interface/font/helvetica.css');
+@font-face {
+  font-family: 'DBHelvethaicaX-47LiCond';
+  src: url('DBHelvethaicaX-47LiCond.eot?#iefix') format('embedded-opentype'),  url('DBHelvethaicaX-47LiCond.woff') format('woff'), url('DBHelvethaicaX-47LiCond.ttf')  format('truetype'), url('DBHelvethaicaX-47LiCond.svg#DBHelvethaicaX-47LiCond') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.db_heaventcond-li{font-family: 'DBHelvethaicaX-47LiCond';}
